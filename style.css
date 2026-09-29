@@ -1,0 +1,153 @@
+* {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: #1f2a1f;
+  background: #eef2ec;
+}
+
+/* Sign-in screen */
+
+.signin {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.card {
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 28px 24px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.card h1 {
+  margin: 0 0 4px;
+  font-size: 1.5rem;
+}
+
+.card label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.card input {
+  padding: 10px 12px;
+  font: inherit;
+  font-weight: 400;
+  border: 1px solid #c5cec3;
+  border-radius: 8px;
+}
+
+button {
+  padding: 10px 14px;
+  font: inherit;
+  font-weight: 600;
+  color: #fff;
+  background: #2f6b3a;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #255630;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.error {
+  margin: 0;
+  color: #b42318;
+  font-size: 0.9rem;
+}
+
+/* Map screen */
+
+.map-view {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: #fff;
+  border-bottom: 1px solid #d5ddd3;
+}
+
+.topbar .title {
+  font-weight: 700;
+}
+
+.topbar .status {
+  flex: 1;
+  color: #5a665a;
+  font-size: 0.9rem;
+}
+
+.topbar .user-email {
+  color: #5a665a;
+  font-size: 0.9rem;
+}
+
+.topbar button {
+  padding: 6px 12px;
+  font-size: 0.9rem;
+}
+
+#map {
+  flex: 1;
+}
+
+/* Hike popup */
+
+.hike-popup h3 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+
+.hike-popup p {
+  margin: 2px 0;
+}
+
+@media (max-width: 600px) {
+  .topbar {
+    flex-wrap: wrap;
+    gap: 4px 12px;
+  }
+
+  .topbar .status {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  .topbar .user-email {
+    display: none;
+  }
+}

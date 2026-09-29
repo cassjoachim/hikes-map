@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hikes Map</title>
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H"
+        crossorigin="anonymous">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <section id="signin-view" class="signin" hidden>
+    <form id="signin-form" class="card">
+      <h1>Hikes Map</h1>
+      <label>
+        Email
+        <input id="email" type="email" autocomplete="email" required>
+      </label>
+      <label>
+        Password
+        <input id="password" type="password" autocomplete="current-password" required>
+      </label>
+      <button id="signin-button" type="submit">Sign in</button>
+      <p id="signin-error" class="error" role="alert" hidden></p>
+    </form>
+  </section>
+
+  <section id="map-view" class="map-view" hidden>
+    <header class="topbar">
+      <span class="title">Hikes Map</span>
+      <span id="status" class="status" role="status"></span>
+      <span id="user-email" class="user-email"></span>
+      <button id="signout-button" type="button">Sign out</button>
+    </header>
+    <div id="map"></div>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH"
+          crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"
+          integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok"
+          crossorigin="anonymous"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
