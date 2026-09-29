@@ -22,6 +22,12 @@ A small static web page. You sign in with email and password, and it draws all o
 - `app.js`: sign-in, loading hikes, drawing the map
 - `config.js`: Supabase project URL and publishable key. Tracked in git on purpose (see Security).
 
+## Features
+
+- Routes are colored by activity type.
+- A legend (top-right) shows each type's color and count, with a checkbox to show or hide that type. Toggling doesn't re-zoom the map.
+- Clicking a route opens a popup with the name, activity, date, distance in miles and km, and elevation gain in feet.
+
 ## Supabase
 
 - Project URL: `https://lnkttywvyqhgvnpcoasn.supabase.co`
@@ -39,6 +45,8 @@ A small static web page. You sign in with email and password, and it draws all o
 | `distance_m`       | numeric     | meters                        |
 | `elevation_gain_m` | numeric     | meters                        |
 | `geojson`          | json        | route as a GeoJSON LineString |
+
+Known `activity_type` values: `hiking`, `walking`, `trail_running`, `snowshoe`. Each has its own route color (`ACTIVITY_COLORS` in `app.js`); any other or missing type is drawn in gray, never dropped.
 
 GeoJSON coordinates are `[longitude, latitude]`, while Leaflet's `L.latLng` expects latitude first. Pass the object to `L.geoJSON(...)`, which handles the order, instead of swapping coordinates by hand.
 

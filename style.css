@@ -125,6 +125,39 @@ button:disabled {
   flex: 1;
 }
 
+/* Legend (a Leaflet control in the map's top-right corner) */
+
+.legend {
+  padding: 8px 10px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
+  font-size: 0.85rem;
+}
+
+.legend:empty {
+  display: none;
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+  cursor: pointer;
+}
+
+.legend-row input {
+  margin: 0;
+}
+
+.legend-swatch {
+  width: 18px;
+  height: 4px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
 /* Hike popup */
 
 .hike-popup h3 {
