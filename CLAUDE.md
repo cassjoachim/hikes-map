@@ -70,6 +70,8 @@ Then open http://localhost:8000. Use a local server rather than opening `site/in
 ## Deploy (Netlify)
 
 - Site: `hikes-map-cassandra`, https://hikes-map-cassandra.netlify.app
+- Custom domain: https://hikes.cassjoachim.com points to this site. Use it as the public link.
+- Code: public GitHub repo https://github.com/cassjoachim/hikes-map (`main`). Pushing doesn't deploy; deploys are manual with the command below.
 - Deploy with the Netlify CLI from the project root: `netlify deploy --prod --dir site`
 - Node and the Netlify CLI live in `~/.local/node` (not on the shell PATH), so run commands with `PATH="$HOME/.local/node/bin:$PATH"`.
 - Visitor access protection is **off** for this site (the team default is Netlify login required), so the page is public. The Supabase sign-in and row level security protect the data.
