@@ -1,0 +1,4 @@
+# Static site, no build step. Publish only the site/ folder so project
+# notes like CLAUDE.md never go live.
+[build]
+  publish = "site"

@@ -9,5 +9,8 @@
 .env
 .env.*
 
+# Netlify CLI's local link to the site
+.netlify/
+
 # Personal Claude Code settings
 .claude/settings.local.json

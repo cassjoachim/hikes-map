@@ -17,10 +17,13 @@ A small static web page. You sign in with email and password, and it draws all o
 
 ## Files
 
-- `index.html`: page structure (sign-in form, map, sign-out)
-- `style.css`: styling
-- `app.js`: sign-in, loading hikes, drawing the map
-- `config.js`: Supabase project URL and publishable key. Tracked in git on purpose (see Security).
+Everything that goes live is in `site/`. Project files (this one, `netlify.toml`, `.gitignore`) stay at the top level and are never published.
+
+- `site/index.html`: page structure (sign-in form, map, sign-out)
+- `site/style.css`: styling
+- `site/app.js`: sign-in, loading hikes, drawing the map
+- `site/config.js`: Supabase project URL and publishable key. Tracked in git on purpose (see Security).
+- `netlify.toml`: tells Netlify to publish only `site/`
 
 ## Features
 
@@ -46,7 +49,7 @@ A small static web page. You sign in with email and password, and it draws all o
 | `elevation_gain_m` | numeric     | meters                        |
 | `geojson`          | json        | route as a GeoJSON LineString |
 
-Known `activity_type` values: `hiking`, `walking`, `trail_running`, `snowshoe`. Each has its own route color (`ACTIVITY_COLORS` in `app.js`); any other or missing type is drawn in gray, never dropped.
+Known `activity_type` values: `hiking`, `walking`, `trail_running`, `snowshoe`. Each has its own route color (`ACTIVITY_COLORS` in `site/app.js`); any other or missing type is drawn in gray, never dropped.
 
 GeoJSON coordinates are `[longitude, latitude]`, while Leaflet's `L.latLng` expects latitude first. Pass the object to `L.geoJSON(...)`, which handles the order, instead of swapping coordinates by hand.
 
@@ -59,7 +62,17 @@ GeoJSON coordinates are `[longitude, latitude]`, while Leaflet's `L.latLng` expe
 ## Run locally
 
 ```sh
-python3 -m http.server 8000
+python3 -m http.server 8000 --directory site
 ```
 
-Then open http://localhost:8000. Use a local server rather than opening `index.html` straight from disk (`file://`), where sign-in sessions can misbehave.
+Then open http://localhost:8000. Use a local server rather than opening `site/index.html` straight from disk (`file://`), where sign-in sessions can misbehave.
+
+## Deploy (Netlify)
+
+- Site: `hikes-map-cassandra`, https://hikes-map-cassandra.netlify.app
+- Deploy with the Netlify CLI from the project root: `netlify deploy --prod --dir site`
+- Node and the Netlify CLI live in `~/.local/node` (not on the shell PATH), so run commands with `PATH="$HOME/.local/node/bin:$PATH"`.
+- Visitor access protection is **off** for this site (the team default is Netlify login required), so the page is public. The Supabase sign-in and row level security protect the data.
+- New sign-ups are **disabled** in Supabase Auth, so only existing accounts can sign in. Don't add a sign-up form.
+- Netlify injects a comment and a `/.netlify/scripts/hud` script into the served `index.html`. That's expected, not a change to our code.
+- This folder is linked to the Hikes Map site only (`.netlify/state.json`, not in git). **Never link, deploy to or change `inspiring-dusk-e93872`**, which serves cassjoachim.com.
