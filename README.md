@@ -12,7 +12,7 @@ I built it with [Claude Code](https://claude.com/claude-code).
 - **Postgres with PostGIS** to store the routes
 - **Row level security** so each user can read only their own rows
 - **The Supabase Data API**, called from the browser with `supabase-js`
-- **Leaflet** with OpenStreetMap tiles to draw the map
+- **Google Maps JavaScript API** to draw the map, with styles managed in Google Cloud (Map IDs)
 - **Netlify** to host it
 
 It's plain HTML, CSS and JavaScript with no build step. Everything that goes live is in `site/`.
@@ -22,6 +22,7 @@ It's plain HTML, CSS and JavaScript with no build step. Everything that goes liv
 - The Supabase **publishable key** in `site/config.js` is public by design. It only identifies the project; it doesn't grant access on its own.
 - **Row level security** limits reads to the owner of the hikes. Without signing in, the API returns nothing.
 - **Sign-ups are disabled**, so nobody else can create an account.
+- The **Google Maps key** in `site/config.js` is also public by design. It only works on this site's addresses and only for the Google APIs it's restricted to.
 
 ## What I noticed building it
 

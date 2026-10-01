@@ -3,17 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Hikes Map</title>
-  <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H"
-        crossorigin="anonymous">
+  <title>Travel Map</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <section id="signin-view" class="signin" hidden>
     <form id="signin-form" class="card">
-      <h1>Hikes Map</h1>
+      <h1>Travel Map</h1>
+      <p class="card-note">Please sign in</p>
       <label>
         Email
         <input id="email" type="email" autocomplete="email" required>
@@ -29,21 +30,23 @@
 
   <section id="map-view" class="map-view" hidden>
     <header class="topbar">
-      <span class="title">Hikes Map</span>
+      <span class="title">Travel Map</span>
       <span id="status" class="status" role="status"></span>
+      <label class="style-picker">
+        Style
+        <select id="style-select"></select>
+      </label>
       <span id="user-email" class="user-email"></span>
       <button id="signout-button" type="button">Sign out</button>
     </header>
     <div id="map"></div>
   </section>
 
-  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"
-          integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH"
-          crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"
           integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok"
           crossorigin="anonymous"></script>
   <script src="config.js"></script>
+  <script src="maps-loader.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

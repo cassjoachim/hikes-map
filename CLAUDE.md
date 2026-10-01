@@ -12,8 +12,10 @@ A small static web page. You sign in with email and password, and it draws all o
 - Plain HTML, CSS and JavaScript. No build step, no npm, no frameworks, no bundler.
 - Load libraries from a CDN with `<script>`/`<link>` tags, pinned to exact versions (no `@latest`, no bare `@2`):
   - Supabase JS client v2 (sign-in and data)
-  - Leaflet 1.9.x (map), with OpenStreetMap tiles
-- The map must show the OpenStreetMap attribution ("© OpenStreetMap contributors"). Their tile usage policy requires it.
+- Google Maps JavaScript API (map), loaded by Google's own loader in `site/maps-loader.js` on the `quarterly` channel. This is the one exception to exact version pins: Google retires numbered versions, and `quarterly` is their stable channel.
+- Keep Google's logo, attribution and Terms links visible on the map. Their terms require it.
+- Font: Karla from Google Fonts (same sans-serif as cassjoachim.com), with system fonts as fallback.
+- The page and app are titled "Travel Map" (tab, top bar, sign-in card). The repo and Netlify site keep the name hikes-map.
 
 ## Files
 
@@ -21,8 +23,10 @@ Everything that goes live is in `site/`. Project files (this one, `netlify.toml`
 
 - `site/index.html`: page structure (sign-in form, map, sign-out)
 - `site/style.css`: styling
-- `site/app.js`: sign-in, loading hikes, drawing the map
-- `site/config.js`: Supabase project URL and publishable key. Tracked in git on purpose (see Security).
+- `site/app.js`: sign-in, loading hikes, drawing the map, Style menu
+- `site/favicon.svg`: browser tab icon
+- `site/maps-loader.js`: Google's loader for the Maps JavaScript API (copied from Google's docs)
+- `site/config.js`: Supabase URL and publishable key, Google Maps browser key, and the list of map styles. Tracked in git on purpose (see Security).
 - `netlify.toml`: tells Netlify to publish only `site/`
 
 ## Features
@@ -30,6 +34,15 @@ Everything that goes live is in `site/`. Project files (this one, `netlify.toml`
 - Routes are colored by activity type.
 - A legend (top-right) shows each type's color and count, with a checkbox to show or hide that type. Toggling doesn't re-zoom the map.
 - Clicking a route opens a popup with the name, activity, date, distance in miles and km, and elevation gain in feet.
+- A Style menu in the top bar switches between "Google default" and the styles listed in `mapStyles` in `config.js` (each is a name plus a Google Map ID). The choice is remembered in the browser. A Map ID can only be set when a map is created, so switching styles rebuilds the map and moves the routes onto it.
+- Google's Map / Satellite switch (with Terrain) is in the top-left.
+- Signed out, the sign-in card ("Travel Map", "Please sign in") floats over the real map, which is locked (`inert`, no clicks or keyboard) with Google's buttons hidden. Only the map imagery is blurred, via CSS on Google's first layer inside `.gm-style`, so Google's logo and attribution stay sharp on top (Google's terms require them visible). If that layer isn't found, `checkBlurTarget` switches to a fallback that frosts the screen except a 32px strip at the bottom. The map shows only Google's base map in the last-chosen style, never hikes. On sign-out the routes are removed and the map resets to the world view.
+- Favicon: `site/favicon.svg`, the same CJ icon as cassjoachim.com. Replace that file to change it.
+
+## Map styles (Google Cloud)
+
+- Styles are designed in Google Cloud: Google Maps Platform > Map Styles. Each style is attached to a Map ID (Map Management > Create Map ID, type JavaScript).
+- To add one to the menu, add `{ name: "...", mapId: "..." }` to `mapStyles` in `config.js`.
 
 ## Supabase
 
@@ -51,12 +64,14 @@ Everything that goes live is in `site/`. Project files (this one, `netlify.toml`
 
 Known `activity_type` values: `hiking`, `walking`, `trail_running`, `snowshoe`. Each has its own route color (`ACTIVITY_COLORS` in `site/app.js`); any other or missing type is drawn in gray, never dropped.
 
-GeoJSON coordinates are `[longitude, latitude]`, while Leaflet's `L.latLng` expects latitude first. Pass the object to `L.geoJSON(...)`, which handles the order, instead of swapping coordinates by hand.
+GeoJSON coordinates are `[longitude, latitude]`, while Google Maps wants `{ lat, lng }`. `loadAndDrawHikes` converts them when it builds each route line.
 
 ## Security (non-negotiable)
 
 - Only the **publishable** key goes in the browser, and it lives in `config.js`. It is safe to expose because row level security only lets a signed-in user read their own hikes.
 - **Never use, request or store the secret (service role) key**, not in code, config, docs or commits.
+- The Google Maps key in `config.js` is a **browser key** and public by design. It's protected in Google Cloud by a website restriction (hikes.cassjoachim.com, hikes-map-cassandra.netlify.app, localhost:8000) and an API restriction. Don't add server-side Google APIs to this key; those need a separate key kept out of the browser (for example in a Supabase Edge Function secret).
+- Google billing has a $5 monthly budget alert. The billing account is a free trial that ends Dec 18, 2026; upgrade it before then or the map stops loading.
 - Don't write code that tries to get around row level security. If data is missing, the likely cause is the RLS policy or the sign-in state, not something to patch in the client.
 
 ## Run locally
