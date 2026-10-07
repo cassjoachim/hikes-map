@@ -16,6 +16,13 @@ const ACTIVITY_COLORS = {
 // Any other or missing activity type is drawn in gray so it never disappears.
 const OTHER_COLOR = "#868e96";
 
+// Hidden hikes (owner view only) are drawn as a faded dashed gray line.
+const HIDDEN_ICON = {
+  icon: { path: "M 0,-1 0,1", strokeOpacity: 0.6, strokeColor: OTHER_COLOR, scale: 3 },
+  offset: "0",
+  repeat: "12px",
+};
+
 const METERS_PER_MILE = 1609.344;
 const FEET_PER_METER = 3.28084;
 
@@ -42,9 +49,15 @@ let infoWindow = null;
 // The legend box, shown as a map control in the top-right corner.
 const legendBox = document.createElement("div");
 legendBox.className = "legend";
-// One entry per activity type: its route lines and whether it's ticked.
-// type -> { lines: google.maps.Polyline[], visible: boolean }
+// One group per activity type: its hikes and whether the type is ticked.
+// type -> { entries: { hike, line: google.maps.Polyline }[], visible: boolean }
 let routeGroups = new Map();
+// Owner-only: also draw the hikes marked hidden (faded, dashed) so they can be un-hidden.
+let showHidden = false;
+// How many hikes had no usable route.
+let skippedCount = 0;
+// How many hikes came back from Supabase.
+let totalHikes = 0;
 // Whose hikes are on the map, so a token refresh doesn't reload them.
 let shownUserId = null;
 // Loads the Google Maps libraries once; every later call reuses the result.
@@ -184,10 +197,8 @@ function createMap(styleIndex, view) {
   infoWindow = new google.maps.InfoWindow();
   map.controls[google.maps.ControlPosition.TOP_RIGHT].push(legendBox);
 
-  // Put any routes already loaded onto the new map, keeping hidden types hidden.
-  for (const group of routeGroups.values()) {
-    for (const line of group.lines) line.setMap(group.visible ? map : null);
-  }
+  // Put any routes already loaded onto the new map, keeping hidden ones hidden.
+  refreshAllLines();
 }
 
 // ---------- Style menu ----------
@@ -281,7 +292,9 @@ async function fetchAllHikes() {
     const from = hikes.length;
     const { data, error } = await client
       .from("hikes_map")
-      .select("id, name, activity_type, started_at, distance_m, elevation_gain_m, geojson")
+      .select(
+        "id, name, activity_type, started_at, distance_m, elevation_gain_m, geojson, show_on_map, notes, user_id",
+      )
       .order("started_at", { ascending: false })
       .order("id")
       .range(from, from + PAGE_SIZE - 1);
@@ -295,9 +308,11 @@ async function fetchAllHikes() {
 
 function clearRoutes() {
   for (const group of routeGroups.values()) {
-    for (const line of group.lines) line.setMap(null);
+    for (const { line } of group.entries) line.setMap(null);
   }
   routeGroups = new Map();
+  showHidden = false;
+  skippedCount = 0;
   if (infoWindow) infoWindow.close();
   legendBox.replaceChildren();
 }
@@ -322,50 +337,108 @@ async function loadAndDrawHikes() {
 
   // One group per activity type, so the legend can show or hide each type.
   const bounds = new google.maps.LatLngBounds();
-  let skipped = 0;
   for (const hike of hikes) {
     const route = parseRoute(hike.geojson);
     if (!route) {
-      skipped++;
+      skippedCount++;
       continue;
     }
     const type = hike.activity_type || "";
     if (!routeGroups.has(type)) {
-      routeGroups.set(type, { lines: [], visible: true });
+      routeGroups.set(type, { entries: [], visible: true });
     }
 
     // GeoJSON stores [longitude, latitude]; Google wants {lat, lng}.
     const path = route.coordinates.map(([lng, lat]) => ({ lat, lng }));
+    // Hidden hikes still count for the map's starting view, so it doesn't
+    // jump around when you hide or un-hide one.
     for (const point of path) bounds.extend(point);
 
-    const line = new google.maps.Polyline({
-      path,
-      map,
-      strokeColor: activityColor(type),
-      strokeWeight: 4,
-      strokeOpacity: 0.8,
-    });
+    const line = new google.maps.Polyline({ path, map: null });
+    const entry = { hike, line };
     line.addListener("click", (event) => {
-      infoWindow.setContent(buildPopup(hike));
+      infoWindow.setContent(buildPopup(entry));
       infoWindow.setPosition(event.latLng);
       infoWindow.open({ map });
     });
-    routeGroups.get(type).lines.push(line);
+    routeGroups.get(type).entries.push(entry);
   }
+  refreshAllLines();
   renderLegend();
+  totalHikes = hikes.length;
+  updateStatus();
 
-  const drawn = hikes.length - skipped;
-  if (hikes.length === 0) {
-    statusText.textContent = "No hikes yet.";
-  } else {
-    statusText.textContent =
-      `${drawn} ${drawn === 1 ? "hike" : "hikes"}` +
-      (skipped ? ` (${skipped} without a route skipped)` : "");
-  }
-
-  if (drawn > 0) {
+  if (hikes.length > skippedCount) {
     map.fitBounds(bounds, 24);
   }
+}
+
+// ---------- Hidden hikes ----------
+
+// Only the hike's owner can edit it. This just decides what to show;
+// the real rule is the row level security policy in Supabase.
+function isOwner(hike) {
+  return shownUserId !== null && hike.user_id === shownUserId;
+}
+
+function isHidden(hike) {
+  return hike.show_on_map === false;
+}
+
+// Normal hikes follow their type's legend checkbox. Hidden hikes are drawn
+// (faded and dashed) only for their owner, and only while the
+// "Hidden hikes" box is ticked.
+function refreshLine(entry, group) {
+  const { hike, line } = entry;
+  if (isHidden(hike)) {
+    line.setOptions({
+      strokeColor: OTHER_COLOR,
+      strokeOpacity: 0,
+      strokeWeight: 3,
+      icons: [HIDDEN_ICON],
+    });
+    line.setMap(showHidden && isOwner(hike) ? map : null);
+  } else {
+    line.setOptions({
+      strokeColor: activityColor(hike.activity_type || ""),
+      strokeOpacity: 0.8,
+      strokeWeight: 4,
+      icons: [],
+    });
+    line.setMap(group.visible ? map : null);
+  }
+}
+
+function refreshAllLines() {
+  for (const group of routeGroups.values()) {
+    for (const entry of group.entries) refreshLine(entry, group);
+  }
+}
+
+function shownCount(group) {
+  return group.entries.filter((entry) => !isHidden(entry.hike)).length;
+}
+
+function hiddenOwnCount() {
+  let count = 0;
+  for (const group of routeGroups.values()) {
+    for (const { hike } of group.entries) if (isHidden(hike) && isOwner(hike)) count++;
+  }
+  return count;
+}
+
+// "12 hikes", counting only hikes that are on the map.
+function updateStatus() {
+  const total = totalHikes;
+  let drawn = 0;
+  for (const group of routeGroups.values()) drawn += shownCount(group);
+  if (total === 0) {
+    statusText.textContent = "No hikes yet.";
+    return;
+  }
+  statusText.textContent =
+    `${drawn} ${drawn === 1 ? "hike" : "hikes"}` +
+    (skippedCount ? ` (${skippedCount} without a route skipped)` : "");
 }
 
 // Returns a usable GeoJSON LineString, or null if the route is missing or broken.
@@ -420,6 +493,8 @@ function renderLegend() {
 
   for (const type of types) {
     const group = routeGroups.get(type);
+    // A type whose hikes are all hidden has nothing to toggle.
+    if (shownCount(group) === 0) continue;
 
     const row = document.createElement("label");
     row.className = "legend-row";
@@ -429,7 +504,7 @@ function renderLegend() {
     checkbox.checked = group.visible;
     checkbox.addEventListener("change", () => {
       group.visible = checkbox.checked;
-      for (const line of group.lines) line.setMap(group.visible ? map : null);
+      for (const entry of group.entries) refreshLine(entry, group);
       // Close the popup if it belongs to a route that just disappeared.
       if (!group.visible) infoWindow.close();
     });
@@ -439,7 +514,32 @@ function renderLegend() {
     swatch.style.background = activityColor(type);
 
     const text = document.createElement("span");
-    text.textContent = `${activityLabel(type)} (${group.lines.length})`;
+    text.textContent = `${activityLabel(type)} (${shownCount(group)})`;
+
+    row.append(checkbox, swatch, text);
+    legendBox.appendChild(row);
+  }
+
+  // Owner-only way to find hidden hikes again, so they can be un-hidden.
+  const hiddenCount = hiddenOwnCount();
+  if (hiddenCount > 0) {
+    const row = document.createElement("label");
+    row.className = "legend-row legend-hidden";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = showHidden;
+    checkbox.addEventListener("change", () => {
+      showHidden = checkbox.checked;
+      refreshAllLines();
+      if (!showHidden) infoWindow.close();
+    });
+
+    const swatch = document.createElement("span");
+    swatch.className = "legend-swatch legend-swatch-hidden";
+
+    const text = document.createElement("span");
+    text.textContent = `Hidden hikes (${hiddenCount})`;
 
     row.append(checkbox, swatch, text);
     legendBox.appendChild(row);
@@ -449,7 +549,8 @@ function renderLegend() {
 // ---------- Popup ----------
 
 // Built with textContent, never innerHTML, so hike names can't inject HTML.
-function buildPopup(hike) {
+function buildPopup(entry) {
+  const { hike } = entry;
   const box = document.createElement("div");
   box.className = "hike-popup";
 
@@ -469,7 +570,97 @@ function buildPopup(hike) {
     p.textContent = text;
     box.appendChild(p);
   }
+
+  if (isOwner(hike)) {
+    box.appendChild(buildEditForm(entry));
+  } else if (hike.notes) {
+    const notes = document.createElement("p");
+    notes.className = "hike-notes";
+    notes.textContent = hike.notes;
+    box.appendChild(notes);
+  }
   return box;
+}
+
+// The owner's controls: show on map, notes, and a Save button.
+function buildEditForm(entry) {
+  const { hike } = entry;
+  const form = document.createElement("form");
+  form.className = "hike-edit";
+
+  const showRow = document.createElement("label");
+  showRow.className = "hike-edit-row";
+  const showBox = document.createElement("input");
+  showBox.type = "checkbox";
+  showBox.checked = !isHidden(hike);
+  const showText = document.createElement("span");
+  showText.textContent = "Show on map";
+  showRow.append(showBox, showText);
+
+  const notesLabel = document.createElement("label");
+  notesLabel.className = "hike-edit-notes";
+  const notesText = document.createElement("span");
+  notesText.textContent = "Notes";
+  const notesBox = document.createElement("textarea");
+  notesBox.rows = 3;
+  notesBox.value = hike.notes || "";
+  notesLabel.append(notesText, notesBox);
+
+  const actions = document.createElement("div");
+  actions.className = "hike-edit-actions";
+  const saveButton = document.createElement("button");
+  saveButton.type = "submit";
+  saveButton.textContent = "Save";
+  const result = document.createElement("span");
+  result.className = "hike-edit-result";
+  result.setAttribute("role", "status");
+  actions.append(saveButton, result);
+
+  // Typing again clears an old "Saved" message.
+  form.addEventListener("input", () => {
+    result.textContent = "";
+  });
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    saveButton.disabled = true;
+    result.className = "hike-edit-result";
+    result.textContent = "Saving…";
+    const ok = await saveHike(entry, showBox.checked, notesBox.value);
+    saveButton.disabled = false;
+    result.className = "hike-edit-result" + (ok ? "" : " error");
+    result.textContent = ok ? "Saved" : "Couldn't save. Try again.";
+  });
+
+  form.append(showRow, notesLabel, actions);
+  return form;
+}
+
+// Writes to the hikes table (not the view). Row level security lets only the
+// owner update; when it blocks a write it changes zero rows without an error,
+// so an empty result counts as a failure too.
+async function saveHike(entry, showOnMap, notes) {
+  const { hike } = entry;
+  const values = { show_on_map: showOnMap, notes: notes.trim() === "" ? null : notes };
+
+  const { data, error } = await client
+    .from("hikes")
+    .update(values)
+    .eq("id", hike.id)
+    .select("id");
+  if (error || !data || data.length === 0) {
+    if (error) console.error(error);
+    return false;
+  }
+
+  hike.show_on_map = values.show_on_map;
+  hike.notes = values.notes;
+  // Update the line, legend and count in place: no reload, no re-zoom.
+  const group = routeGroups.get(hike.activity_type || "");
+  if (group) refreshLine(entry, group);
+  renderLegend();
+  updateStatus();
+  return true;
 }
 
 function formatDate(value) {

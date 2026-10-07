@@ -234,6 +234,68 @@ button:disabled {
   margin: 2px 0;
 }
 
+.legend-swatch-hidden {
+  height: 0;
+  background: none;
+  border-top: 2px dashed #868e96;
+  border-radius: 0;
+}
+
+.hike-notes {
+  white-space: pre-wrap;
+}
+
+.hike-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  max-width: 260px;
+}
+
+.hike-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.hike-edit-row input {
+  margin: 0;
+}
+
+.hike-edit-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.hike-edit-notes textarea {
+  padding: 6px 8px;
+  font: inherit;
+  font-weight: 400;
+  resize: vertical;
+  border: 1px solid #c5cec3;
+  border-radius: 6px;
+}
+
+.hike-edit-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hike-edit-actions button {
+  padding: 6px 12px;
+  font-size: 0.9rem;
+}
+
+.hike-edit-result {
+  color: #5a665a;
+  font-size: 0.85rem;
+}
+
 @media (max-width: 600px) {
   .topbar {
     flex-wrap: wrap;

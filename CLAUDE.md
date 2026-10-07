@@ -34,6 +34,9 @@ Everything that goes live is in `site/`. Project files (this one, `netlify.toml`
 - Routes are colored by activity type.
 - A legend (top-right) shows each type's color and count, with a checkbox to show or hide that type. Toggling doesn't re-zoom the map.
 - Clicking a route opens a popup with the name, activity, date, distance in miles and km, and elevation gain in feet.
+- Hikes with `show_on_map = false` are left off the map and out of the legend counts. This is filtering in the browser only, to keep the map tidy; it is not a privacy feature.
+- Owner-only editing: if a hike's `user_id` is the signed-in user, its popup also has a "Show on map" checkbox, a notes box and a Save button (saved with supabase-js to the `hikes` table). Everyone else sees the notes as read-only text and no controls. The owner check only decides what to show; the RLS update policy is what enforces it. RLS blocks a write by changing zero rows without an error, so `saveHike` treats an empty result as a failure.
+- Owner-only "Hidden hikes (n)" checkbox in the legend draws hidden hikes as faded dashed gray lines so they can be found and un-hidden. Unticked by default.
 - A Style menu in the top bar switches between "Google default" and the styles listed in `mapStyles` in `config.js` (each is a name plus a Google Map ID). The choice is remembered in the browser. A Map ID can only be set when a map is created, so switching styles rebuilds the map and moves the routes onto it.
 - Google's Map / Satellite switch (with Terrain) is in the top-left.
 - Signed out, the sign-in card ("Travel Map", "Please sign in") floats over the real map, which is locked (`inert`, no clicks or keyboard) with Google's buttons hidden. Only the map imagery is blurred, via CSS on Google's first layer inside `.gm-style`, so Google's logo and attribution stay sharp on top (Google's terms require them visible). If that layer isn't found, `checkBlurTarget` switches to a fallback that frosts the screen except a 32px strip at the bottom. The map shows only Google's base map in the last-chosen style, never hikes. On sign-out the routes are removed and the map resets to the world view.
@@ -48,7 +51,7 @@ Everything that goes live is in `site/`. Project files (this one, `netlify.toml`
 
 - Project URL: `https://lnkttywvyqhgvnpcoasn.supabase.co`
 - Auth: email and password (`signInWithPassword`, `signOut`, and restoring the session on page load).
-- Data: read from the view `hikes_map`. Read only; the app never writes.
+- Data: read from the view `hikes_map` (`security_invoker = true`). The only writes are the owner editing `show_on_map` and `notes` on the `hikes` table; an RLS policy lets only the owner update their own hikes.
 
 ### `hikes_map` columns (confirmed)
 
@@ -61,6 +64,9 @@ Everything that goes live is in `site/`. Project files (this one, `netlify.toml`
 | `distance_m`       | numeric     | meters                        |
 | `elevation_gain_m` | numeric     | meters                        |
 | `geojson`          | json        | route as a GeoJSON LineString |
+| `show_on_map`      | boolean     | false = hidden from the map   |
+| `notes`            | text        | owner's notes, may be null    |
+| `user_id`          | uuid        | owner; compared to the signed-in user |
 
 Known `activity_type` values: `hiking`, `walking`, `trail_running`, `snowshoe`. Each has its own route color (`ACTIVITY_COLORS` in `site/app.js`); any other or missing type is drawn in gray, never dropped.
 
