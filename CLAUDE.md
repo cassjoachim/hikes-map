@@ -28,7 +28,7 @@ Everything that goes live is in `site/`. Project files (this one, `netlify.toml`
 - `site/maps-loader.js`: Google's loader for the Maps JavaScript API (copied from Google's docs)
 - `site/config.js`: Supabase URL and publishable key, Google Maps browser key, and the list of map styles. Tracked in git on purpose (see Security).
 - `netlify.toml`: tells Netlify to publish only `site/`
-- `.github/workflows/supabase-keepalive.yml`: GitHub Action that pings both free-plan Supabase projects (this one and service-requests) every 3 days so they don't auto-pause. Reads the publishable keys from repo secrets `HIKES_SUPABASE_PUBLISHABLE_KEY` and `SERVICE_REQUESTS_SUPABASE_PUBLISHABLE_KEY`. GitHub turns scheduled workflows off after 60 days with no commits; re-enable from the Actions tab if that email arrives.
+- `.github/workflows/supabase-keepalive.yml`: GitHub Action that pings both free-plan Supabase projects (this one and service-requests) every 6 hours so they don't auto-pause. Reads the publishable keys from repo secrets `HIKES_SUPABASE_PUBLISHABLE_KEY` and `SERVICE_REQUESTS_SUPABASE_PUBLISHABLE_KEY`. GitHub turns scheduled workflows off after 60 days with no commits; re-enable from the Actions tab if that email arrives.
 
 ## Features
 

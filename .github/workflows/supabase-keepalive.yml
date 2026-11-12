@@ -1,13 +1,15 @@
 # Keeps both free-plan Supabase projects from auto-pausing.
 # Supabase pauses a free project after 7 days without activity, so this
-# sends one small read request to each project every 3 days.
+# sends a small read request to each project every 6 hours (4 a day).
+# Supabase says "a few user requests to the database each day" is enough;
+# the earlier every-3-days schedule was not, and the hikes project paused.
 # Uses only the publishable keys (safe to expose), stored as repo secrets.
 
 name: Supabase keep-alive
 
 on:
   schedule:
-    - cron: "17 15 */3 * *" # 15:17 UTC (7:17 or 8:17 AM Pacific), every 3rd day
+    - cron: "17 */6 * * *" # :17 past 0, 6, 12 and 18 UTC, every day
   workflow_dispatch: # adds a "Run workflow" button for a manual check
 
 permissions: {}
